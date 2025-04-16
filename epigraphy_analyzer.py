@@ -1,3 +1,5 @@
+
+
 import os
 import cv2
 import numpy as np
@@ -13,17 +15,18 @@ import matplotlib.pyplot as plt
 import streamlit as st
 from PIL import Image
 import tempfile
+import base64
 
 # Configuration
 IMAGE_SIZE = (224, 224)
-DATASET_PATH = "C:\Users\vinot\OneDrive\Desktop\TamilEpigraphyAnalyzer\8thcentury dataset"
+DATASET_PATH = r"D:\TamilEpigraphyAnalyzer\content\8thcentury dataset"
 
 # Specify the path to Tesseract OCR
 pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 
 class EpigraphyAnalyzer:
     def __init__(self):
-        self.script_model = load_model("C:\Users\vinot\OneDrive\Desktop\TamilEpigraphyAnalyzer\epigraphy__model.h5")
+        self.script_model = load_model(r"D:\TamilEpigraphyAnalyzer\content\epigraphy__model.h5")
         self.feature_extractor = self._init_feature_extractor()
         self.class_labels = [p.name for p in Path(DATASET_PATH).iterdir()]
         self.reference_features = self._load_reference_features()
@@ -130,9 +133,38 @@ class EpigraphyAnalyzer:
             print(f"Processing Error: {str(e)}")
         return result
 
-# Streamlit Interface
+
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+
 def run_streamlit_app():
     st.set_page_config(page_title="Tamil Epigraphy Analyzer", layout="centered")
+
+    # 🔥 Use local image as background
+    bg_image_path = "D:\TamilEpigraphyAnalyzer\bg.png"  # Update as needed
+    bg_image_base64 = get_base64_image(bg_image_path)
+
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{bg_image_base64}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }}
+        .block-container {{
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 2rem;
+            border-radius: 10px;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
     st.title("🪵 Tamil Epigraphy Analyzer")
     st.markdown("Upload an inscription image to analyze its script, segment characters, and get Tamil to English translation.")
 
@@ -167,6 +199,7 @@ def run_streamlit_app():
                 cols[i % 5].image(char_img, use_container_width=True, clamp=True)
         else:
             st.warning("No characters segmented.")
+
 
 if __name__ == "__main__":
     run_streamlit_app()
