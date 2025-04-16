@@ -9,19 +9,21 @@ from pathlib import Path
 import pytesseract
 import Levenshtein
 from deep_translator import GoogleTranslator
+import matplotlib.pyplot as plt
 import streamlit as st
 from PIL import Image
 import tempfile
 import base64
 
-# Configs
+# Configuration
 IMAGE_SIZE = (224, 224)
 DATASET_PATH = "8thcentury dataset"
-pytesseract.pytesseract.tesseract_cmd = '/https://github.com/tesseract-ocr/tesseract'  # Update if needed
 
-# Analyzer Class
+# Specify the path to Tesseract OCR
+pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+
 class EpigraphyAnalyzer:
-    def __init__(self):
+    def _init_(self):
         self.script_model = load_model("epigraphy__model.h5")
         self.feature_extractor = self._init_feature_extractor()
         self.class_labels = [p.name for p in Path(DATASET_PATH).iterdir()]
@@ -48,10 +50,9 @@ class EpigraphyAnalyzer:
             if len(img.shape) == 2:
                 img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
             img = cv2.resize(img, IMAGE_SIZE)
-            img = img / 255.0
-            return self.feature_extractor.predict(np.expand_dims(img, axis=0))
+            return self.feature_extractor.predict(np.expand_dims(img/255.0, axis=0))
         except Exception as e:
-            print(f"Feature extraction error: {e}")
+            print(f"Feature extraction error: {str(e)}")
             return None
 
     def _preprocess_image(self, img_path):
@@ -63,7 +64,7 @@ class EpigraphyAnalyzer:
             img = cv2.medianBlur(img, 3)
             return img
         except Exception as e:
-            print(f"Preprocessing error: {e}")
+            print(f"Preprocessing error: {str(e)}")
             return None
 
     def _segment_characters(self, processed_img):
@@ -79,7 +80,7 @@ class EpigraphyAnalyzer:
                     chars.append(cv2.resize(char, (64, 64)))
             return chars
         except Exception as e:
-            print(f"Segmentation error: {e}")
+            print(f"Segmentation error: {str(e)}")
             return []
 
     def analyze_inscription(self, img_path, ground_truth_text=None):
@@ -109,41 +110,42 @@ class EpigraphyAnalyzer:
             if extracted_text.strip():
                 result['translated_text'] = GoogleTranslator(source='ta', target='en').translate(extracted_text)
 
-            # OCR Accuracy
+            # OCR Accuracy Calculation
             if ground_truth_text:
                 max_len = max(len(extracted_text), len(ground_truth_text))
                 if max_len > 0:
                     distance = Levenshtein.distance(extracted_text, ground_truth_text)
-                    result['ocr_accuracy'] = round((1 - (distance / max_len)) * 100, 2)
+                    result['ocr_accuracy'] = (1 - (distance / max_len)) * 100
                 else:
                     result['ocr_accuracy'] = 100
 
-            # Century Prediction
+            # Century Classification
             century_matches = []
             for char in result['segmented_chars']:
                 feat = self._extract_features(char)
                 if feat is not None:
-                    similarities = [cosine_similarity(feat.reshape(1, -1), ref.reshape(1, -1))[0][0]
-                                    for ref in self.reference_features.values()]
+                    similarities = [cosine_similarity(feat.reshape(1,-1), ref.reshape(1,-1))[0][0] for ref in self.reference_features.values()]
                     century_matches.append(max(similarities) > 0.7)
-            if century_matches and (sum(century_matches) / len(century_matches) > 0.25):
-                result['century'] = "8th Century"
+            result['century'] = "8th Century" if century_matches and (sum(century_matches)/len(century_matches) > 0.25) else "Unknown"
         except Exception as e:
-            print(f"Processing Error: {e}")
+            print(f"Processing Error: {str(e)}")
         return result
 
-# Utilities
+
 def get_base64_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-# Streamlit UI
+
 def run_streamlit_app():
     st.set_page_config(page_title="Tamil Epigraphy Analyzer", layout="centered")
-    bg_image_path = "bg.png"
+
+    # 🔥 Use local image as background
+    bg_image_path = "bg.png" # Update as needed
     bg_image_base64 = get_base64_image(bg_image_path)
 
-    st.markdown(f"""
+    st.markdown(
+        f"""
         <style>
         .stApp {{
             background-image: url("data:image/png;base64,{bg_image_base64}");
@@ -157,7 +159,9 @@ def run_streamlit_app():
             border-radius: 10px;
         }}
         </style>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True
+    )
 
     st.title("🪵 Tamil Epigraphy Analyzer")
     st.markdown("Upload an inscription image to analyze its script, segment characters, and get Tamil to English translation.")
@@ -173,9 +177,9 @@ def run_streamlit_app():
         analyzer = EpigraphyAnalyzer()
         analysis = analyzer.analyze_inscription(temp_img_path, ground_truth_text.strip() or None)
 
-        st.subheader("🖋️ Script Classification")
-        st.success(f"**Script Type:** {analysis['script_type']}")
-        st.success(f"**Century Prediction:** {analysis['century']}")
+        st.subheader("🖋 Script Classification")
+        st.success(f"*Script Type:* {analysis['script_type']}")
+        st.success(f"*Century Prediction:* {analysis['century']}")
 
         st.subheader("🧠 Extracted Text")
         st.code(analysis['extracted_text'] or "No text extracted.")
@@ -194,5 +198,6 @@ def run_streamlit_app():
         else:
             st.warning("No characters segmented.")
 
-if __name__ == "__main__":
+
+if _name_ == "_main_":
     run_streamlit_app()
