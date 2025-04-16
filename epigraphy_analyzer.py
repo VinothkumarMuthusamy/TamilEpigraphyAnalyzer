@@ -201,5 +201,5 @@ def run_streamlit_app():
             st.warning("No characters segmented.")
 
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     run_streamlit_app()
