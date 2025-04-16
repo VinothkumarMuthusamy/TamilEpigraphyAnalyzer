@@ -8,13 +8,6 @@ scikit-learn
 pytesseract
 python-Levenshtein
 deep-translator
-streamlit
 opencv-python-headless
-tensorflow
 keras
-scikit-learn
-pytesseract
 pillow
-deep-translator
-python-Levenshtein
-
