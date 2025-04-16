@@ -19,14 +19,14 @@ import base64
 
 # Configuration
 IMAGE_SIZE = (224, 224)
-DATASET_PATH = r"D:\TamilEpigraphyAnalyzer\content\8thcentury dataset"
+DATASET_PATH = "TamilEpigraphyAnalyzer/8thcentury dataset"
 
 # Specify the path to Tesseract OCR
 pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 
 class EpigraphyAnalyzer:
     def __init__(self):
-        self.script_model = load_model(r"D:\TamilEpigraphyAnalyzer\content\epigraphy__model.h5")
+        self.script_model = load_model("TamilEpigraphyAnalyzer/epigraphy__model.h5")
         self.feature_extractor = self._init_feature_extractor()
         self.class_labels = [p.name for p in Path(DATASET_PATH).iterdir()]
         self.reference_features = self._load_reference_features()
@@ -143,7 +143,7 @@ def run_streamlit_app():
     st.set_page_config(page_title="Tamil Epigraphy Analyzer", layout="centered")
 
     # 🔥 Use local image as background
-    bg_image_path = "D:\TamilEpigraphyAnalyzer\bg.png"  # Update as needed
+    bg_image_path = "TamilEpigraphyAnalyzer\bg.png"  # Update as needed
     bg_image_base64 = get_base64_image(bg_image_path)
 
     st.markdown(
