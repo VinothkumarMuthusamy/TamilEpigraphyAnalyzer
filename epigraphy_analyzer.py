@@ -1,5 +1,3 @@
-
-
 import os
 import cv2
 import numpy as np
@@ -201,5 +199,5 @@ def run_streamlit_app():
             st.warning("No characters segmented.")
 
 
-if __name__ == "__main__":
+if __name__== "__main__":
     run_streamlit_app()
