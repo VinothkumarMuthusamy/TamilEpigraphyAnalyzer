@@ -1,3 +1,5 @@
+
+
 import os
 import cv2
 import numpy as np
@@ -23,7 +25,7 @@ DATASET_PATH = "8thcentury dataset"
 pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
 
 class EpigraphyAnalyzer:
-    def _init_(self):
+    def __init__(self):
         self.script_model = load_model("epigraphy__model.h5")
         self.feature_extractor = self._init_feature_extractor()
         self.class_labels = [p.name for p in Path(DATASET_PATH).iterdir()]
@@ -141,7 +143,7 @@ def run_streamlit_app():
     st.set_page_config(page_title="Tamil Epigraphy Analyzer", layout="centered")
 
     # 🔥 Use local image as background
-    bg_image_path = "bg.png" # Update as needed
+    bg_image_path = "bg.png"  # Update as needed
     bg_image_base64 = get_base64_image(bg_image_path)
 
     st.markdown(
@@ -177,9 +179,9 @@ def run_streamlit_app():
         analyzer = EpigraphyAnalyzer()
         analysis = analyzer.analyze_inscription(temp_img_path, ground_truth_text.strip() or None)
 
-        st.subheader("🖋 Script Classification")
-        st.success(f"*Script Type:* {analysis['script_type']}")
-        st.success(f"*Century Prediction:* {analysis['century']}")
+        st.subheader("🖋️ Script Classification")
+        st.success(f"**Script Type:** {analysis['script_type']}")
+        st.success(f"**Century Prediction:** {analysis['century']}")
 
         st.subheader("🧠 Extracted Text")
         st.code(analysis['extracted_text'] or "No text extracted.")
@@ -199,5 +201,5 @@ def run_streamlit_app():
             st.warning("No characters segmented.")
 
 
-if __name__== "__main__":
+if __name__ == "__main__":
     run_streamlit_app()
