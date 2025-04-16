@@ -143,7 +143,7 @@ def run_streamlit_app():
     st.set_page_config(page_title="Tamil Epigraphy Analyzer", layout="centered")
 
     # 🔥 Use local image as background
-    bg_image_path = "TamilEpigraphyAnalyzer/bg.png" # Update as needed
+    bg_image_path = "https://github.com/VinothkumarMuthusamy/TamilEpigraphyAnalyzer/blob/main/bg.png" # Update as needed
     bg_image_base64 = get_base64_image(bg_image_path)
 
     st.markdown(
