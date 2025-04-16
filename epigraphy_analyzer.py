@@ -1,3 +1,5 @@
+pip install opencv-python numpy tensorflow scikit-learn pytesseract deep-translator matplotlib streamlit Pillow python-Levenshtein
+
 import os
 import cv2
 import numpy as np
