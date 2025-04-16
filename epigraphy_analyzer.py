@@ -17,7 +17,7 @@ import base64
 # Configs
 IMAGE_SIZE = (224, 224)
 DATASET_PATH = "8thcentury dataset"
-pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'  # Update if needed
+pytesseract.pytesseract.tesseract_cmd = '/https://github.com/tesseract-ocr/tesseract'  # Update if needed
 
 # Analyzer Class
 class EpigraphyAnalyzer:
