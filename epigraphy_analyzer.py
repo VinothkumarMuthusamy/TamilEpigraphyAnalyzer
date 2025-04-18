@@ -1,5 +1,3 @@
-
-
 import os
 import cv2
 import numpy as np
@@ -8,7 +6,7 @@ from tensorflow.keras.models import load_model, Model
 from tensorflow.keras.applications import VGG16
 from sklearn.metrics.pairwise import cosine_similarity
 from pathlib import Path
-import pytesseract
+import easyocr
 import Levenshtein
 from deep_translator import GoogleTranslator
 import matplotlib.pyplot as plt
@@ -21,15 +19,13 @@ import base64
 IMAGE_SIZE = (224, 224)
 DATASET_PATH = "8thcentury dataset"
 
-# Specify the path to Tesseract OCR
-pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
-
 class EpigraphyAnalyzer:
     def __init__(self):
         self.script_model = load_model("epigraphy__model.h5")
         self.feature_extractor = self._init_feature_extractor()
         self.class_labels = [p.name for p in Path(DATASET_PATH).iterdir()]
         self.reference_features = self._load_reference_features()
+        self.ocr_reader = easyocr.Reader(['ta'])  # Tamil OCR
 
     def _init_feature_extractor(self):
         base_model = VGG16(weights='imagenet', include_top=False, input_shape=(*IMAGE_SIZE, 3))
@@ -106,8 +102,9 @@ class EpigraphyAnalyzer:
                 return result
             result['segmented_chars'] = self._segment_characters(processed)
 
-            # OCR & Translation
-            extracted_text = pytesseract.image_to_string(processed, lang='tam', config='--psm 6')
+            # OCR & Translation using EasyOCR
+            results = self.ocr_reader.readtext(processed)
+            extracted_text = ' '.join([text for _, text, _ in results])
             result['extracted_text'] = extracted_text.strip()
             if extracted_text.strip():
                 result['translated_text'] = GoogleTranslator(source='ta', target='en').translate(extracted_text)
@@ -143,7 +140,7 @@ def run_streamlit_app():
     st.set_page_config(page_title="Tamil Epigraphy Analyzer", layout="centered")
 
     # 🔥 Use local image as background
-    bg_image_path = "bg.png"  # Update as needed
+    bg_image_path = "bg.png"  # Update if needed
     bg_image_base64 = get_base64_image(bg_image_path)
 
     st.markdown(
