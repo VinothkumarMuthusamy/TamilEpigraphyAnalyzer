@@ -6,7 +6,7 @@ from tensorflow.keras.models import load_model, Model
 from tensorflow.keras.applications import VGG16
 from sklearn.metrics.pairwise import cosine_similarity
 from pathlib import Path
-import easyocr
+import pytesseract
 import Levenshtein
 from deep_translator import GoogleTranslator
 import matplotlib.pyplot as plt
@@ -19,17 +19,11 @@ import base64
 IMAGE_SIZE = (224, 224)
 DATASET_PATH = "8thcentury dataset"
 
+# Specify the path to Tesseract OCR
+pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+
 class EpigraphyAnalyzer:
-    def __init__(self):
-        try:
-            # Initialize EasyOCR for Tamil OCR
-            print("Initializing EasyOCR...")
-            self.ocr_reader = easyocr.Reader(['ta'])  # Tamil OCR
-            print("EasyOCR initialized successfully.")
-        except Exception as e:
-            print(f"Error during EasyOCR initialization: {e}")
-            self.ocr_reader = None
-        
+    def _init_(self):
         self.script_model = load_model("epigraphy__model.h5")
         self.feature_extractor = self._init_feature_extractor()
         self.class_labels = [p.name for p in Path(DATASET_PATH).iterdir()]
@@ -43,7 +37,7 @@ class EpigraphyAnalyzer:
         features = {}
         for root, _, files in os.walk(DATASET_PATH):
             for file in files:
-                if file.lower().endswith(('.png', '.jpg', '.jpeg')):  # Process image files only
+                if file.lower().endswith(('.png', '.jpg', '.jpeg')):
                     img = cv2.imread(os.path.join(root, file))
                     if img is not None:
                         feat = self._extract_features(img)
@@ -110,23 +104,17 @@ class EpigraphyAnalyzer:
                 return result
             result['segmented_chars'] = self._segment_characters(processed)
 
-            # OCR & Translation (Using EasyOCR)
-            if self.ocr_reader:
-                extracted_text = self.ocr_reader.readtext(processed)
-                result['extracted_text'] = ' '.join([text[1] for text in extracted_text])
-            else:
-                extracted_text = pytesseract.image_to_string(processed, lang='tam', config='--psm 6')
-                result['extracted_text'] = extracted_text.strip()
-
-            # Translate to English
-            if result['extracted_text'].strip():
-                result['translated_text'] = GoogleTranslator(source='ta', target='en').translate(result['extracted_text'])
+            # OCR & Translation
+            extracted_text = pytesseract.image_to_string(processed, lang='tam', config='--psm 6')
+            result['extracted_text'] = extracted_text.strip()
+            if extracted_text.strip():
+                result['translated_text'] = GoogleTranslator(source='ta', target='en').translate(extracted_text)
 
             # OCR Accuracy Calculation
             if ground_truth_text:
-                max_len = max(len(result['extracted_text']), len(ground_truth_text))
+                max_len = max(len(extracted_text), len(ground_truth_text))
                 if max_len > 0:
-                    distance = Levenshtein.distance(result['extracted_text'], ground_truth_text)
+                    distance = Levenshtein.distance(extracted_text, ground_truth_text)
                     result['ocr_accuracy'] = (1 - (distance / max_len)) * 100
                 else:
                     result['ocr_accuracy'] = 100
@@ -189,9 +177,9 @@ def run_streamlit_app():
         analyzer = EpigraphyAnalyzer()
         analysis = analyzer.analyze_inscription(temp_img_path, ground_truth_text.strip() or None)
 
-        st.subheader("🖋️ Script Classification")
-        st.success(f"**Script Type:** {analysis['script_type']}")
-        st.success(f"**Century Prediction:** {analysis['century']}")
+        st.subheader("🖋 Script Classification")
+        st.success(f"*Script Type:* {analysis['script_type']}")
+        st.success(f"*Century Prediction:* {analysis['century']}")
 
         st.subheader("🧠 Extracted Text")
         st.code(analysis['extracted_text'] or "No text extracted.")
@@ -211,5 +199,5 @@ def run_streamlit_app():
             st.warning("No characters segmented.")
 
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     run_streamlit_app()
