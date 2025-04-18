@@ -11,3 +11,4 @@ deep-translator
 opencv-python-headless
 keras
 pillow
+easyocr
